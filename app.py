@@ -1,56 +1,29 @@
 import streamlit as st
-from ultralytics import YOLO
-import numpy as np
-from PIL import Image, ImageDraw
+from transformers import pipeline
+from PIL import Image
 
-# Modell laden
+# Modell einmal laden (wird gecacht)
 @st.cache_resource
-def load_model():
-    return YOLO("yolov8n.pt")
+def load_classifier():
+    # Gutes Allround-Modell (ViT base, ~86M Parameter)
+    return pipeline("image-classification", model="google/vit-base-patch16-224")
 
-model = load_model()
+classifier = load_classifier()
 
-st.title("👕 YOLO Kleidungs-Erkennung")
+st.title("Bild hochladen → KI sagt was drauf ist")
+st.write("Funktioniert mit fast allen Alltagsdingen (ImageNet-Klassen)")
 
-uploaded_file = st.file_uploader(
-    "Bild hochladen",
-    type=["jpg","jpeg","png"]
-)
+uploaded_file = st.file_uploader("Wähl ein JPG/PNG/JPEG aus", type=["jpg", "jpeg", "png"])
 
-if uploaded_file:
-
-    image = Image.open(uploaded_file).convert("RGB")
-
-    st.image(image, caption="Originalbild")
-
-    results = model(image)
-
-    result = results[0]
-
-    boxes = result.boxes.xyxy.cpu().numpy()
-    classes = result.boxes.cls.cpu().numpy()
-
-    draw = ImageDraw.Draw(image)
-
-    detected = []
-
-    for box, cls in zip(boxes, classes):
-
-        x1, y1, x2, y2 = box
-
-        label = model.names[int(cls)]
-
-        detected.append(label)
-
-        draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
-
-        draw.text((x1, y1), label, fill="red")
-
-    st.image(image, caption="Erkannte Objekte")
-
-    if detected:
-        st.subheader("Erkannte Kleidung")
-        for d in detected:
-            st.write("•", d)
-    else:
-        st.warning("Keine Kleidung erkannt")
+if uploaded_file is not None:
+    # Bild anzeigen
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Dein hochgeladenes Bild", use_column_width=True)
+    
+    with st.spinner("Analysiere... (kann 2–10 Sekunden dauern)"):
+        # Vorhersage machen
+        results = classifier(image)
+    
+    st.success("Top-Ergebnisse:")
+    for i, res in enumerate(results[:5], 1):
+        st.write(f"{i}. **{res['label']}** – {res['score']:.1%} sicher")
