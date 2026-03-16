@@ -1,90 +1,56 @@
 import streamlit as st
 from ultralytics import YOLO
-import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
-# ==============================
-# MODEL LOAD
-# ==============================
-
+# Modell laden
 @st.cache_resource
 def load_model():
-    model = YOLO("yolov8n.pt")   # automatisch geladen
-    return model
+    return YOLO("yolov8n.pt")
 
 model = load_model()
 
-# ==============================
-# UI
-# ==============================
-
-st.title("👕 YOLO KI Kleidungs-Erkennung")
-
-st.write("Lade ein Bild hoch und YOLO erkennt die Kleidungsstücke.")
+st.title("👕 YOLO Kleidungs-Erkennung")
 
 uploaded_file = st.file_uploader(
     "Bild hochladen",
     type=["jpg","jpeg","png"]
 )
 
-# ==============================
-# IMAGE PROCESSING
-# ==============================
+if uploaded_file:
 
-if uploaded_file is not None:
+    image = Image.open(uploaded_file).convert("RGB")
 
-    image = Image.open(uploaded_file)
-    img = np.array(image)
+    st.image(image, caption="Originalbild")
 
-    st.image(image, caption="Originalbild", use_container_width=True)
-
-    # YOLO Prediction
-    results = model(img)
+    results = model(image)
 
     result = results[0]
 
-    boxes = result.boxes
-    names = model.names
+    boxes = result.boxes.xyxy.cpu().numpy()
+    classes = result.boxes.cls.cpu().numpy()
 
-    detected_items = []
+    draw = ImageDraw.Draw(image)
 
-    # Bounding Boxes zeichnen
-    for box in boxes:
+    detected = []
 
-        x1, y1, x2, y2 = map(int, box.xyxy[0])
-        cls = int(box.cls[0])
-        label = names[cls]
+    for box, cls in zip(boxes, classes):
 
-        detected_items.append(label)
+        x1, y1, x2, y2 = box
 
-        cv2.rectangle(
-            img,
-            (x1,y1),
-            (x2,y2),
-            (0,255,0),
-            2
-        )
+        label = model.names[int(cls)]
 
-        cv2.putText(
-            img,
-            label,
-            (x1,y1-10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.9,
-            (0,255,0),
-            2
-        )
+        detected.append(label)
 
-    st.image(img, caption="Erkannte Kleidung", use_container_width=True)
+        draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
 
-    if detected_items:
+        draw.text((x1, y1), label, fill="red")
 
-        st.subheader("Erkannte Kleidungsstücke")
+    st.image(image, caption="Erkannte Objekte")
 
-        for item in detected_items:
-            st.write("•", item)
-
+    if detected:
+        st.subheader("Erkannte Kleidung")
+        for d in detected:
+            st.write("•", d)
     else:
-
-        st.warning("Keine Kleidung erkannt.")
+        st.warning("Keine Kleidung erkannt")
