@@ -27,4 +27,3 @@ if uploaded_file is not None:
     st.success("Top-Ergebnisse:")
     for i, res in enumerate(results[:5], 1):
         st.write(f"{i}. **{res['label']}** – {res['score']:.1%} sicher")
-print "hello world"
