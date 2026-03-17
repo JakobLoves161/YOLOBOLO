@@ -10,17 +10,17 @@ def load_classifier():
 
 classifier = load_classifier()
 
-st.title("Bild hochladen → KI sagt was drauf ist")
+st.title("KI_ Bild Erkennung")
 st.write("Funktioniert mit fast allen Alltagsdingen (ImageNet-Klassen)")
 
-uploaded_file = st.file_uploader("Wähl ein JPG/PNG/JPEG aus", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Wähl ein BILD AUS MIT EM Format JPG/PNG/JPEG aus", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     # Bild anzeigen
     image = Image.open(uploaded_file)
     st.image(image, caption="Dein hochgeladenes Bild", use_column_width=True)
     
-    with st.spinner("Analysiere... (kann 2–10 Sekunden dauern)"):
+    with st.spinner("Analysiere..."):
         # Vorhersage machen
         results = classifier(image)
     
