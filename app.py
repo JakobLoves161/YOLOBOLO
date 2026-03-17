@@ -10,7 +10,7 @@ def load_classifier():
 
 classifier = load_classifier()
 
-st.title("KI_ Bild Erkennung")
+st.title("KI Bild Erkennung")
 st.write("Funktioniert mit fast allen Alltagsdingen (ImageNet-Klassen)")
 
 uploaded_file = st.file_uploader("Wähl ein BILD AUS MIT EM Format JPG/PNG/JPEG aus", type=["jpg", "jpeg", "png"])
